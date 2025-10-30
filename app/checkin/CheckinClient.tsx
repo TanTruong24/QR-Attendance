@@ -10,7 +10,6 @@ declare global {
 }
 
 const CLIENT_ID = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!;
-const APP_SCRIPT_URL = process.env.NEXT_PUBLIC_APPS_SCRIPT_URL!;
 
 export default function CheckinClient() {
   const sp = useSearchParams();
@@ -20,10 +19,6 @@ export default function CheckinClient() {
   useEffect(() => {
     if (!CLIENT_ID) {
       setStatus("Thiếu NEXT_PUBLIC_GOOGLE_CLIENT_ID");
-      return;
-    }
-    if (!APP_SCRIPT_URL) {
-      setStatus("Thiếu NEXT_PUBLIC_APPS_SCRIPT_URL");
       return;
     }
 
@@ -38,7 +33,7 @@ export default function CheckinClient() {
           const idToken = resp.credential;
           setStatus("Đang xác thực...");
           try {
-            const res = await fetch(APP_SCRIPT_URL, {
+            const res = await fetch("/api/checkin", {
               method: "POST",
               headers: { "Content-Type": "text/plain;charset=utf-8" },
               body: JSON.stringify({
@@ -50,11 +45,12 @@ export default function CheckinClient() {
 
             const data = await res.json();
 
-            // Helper: dựng chuỗi "Thứ tự"
             const buildOrder = (d: any) => {
-              if (d?.orderLabel) return d.orderLabel; // vd: "2/100"
+              if (d?.orderLabel) return d.orderLabel;
               if (d?.order?.index) {
-                return d.order?.total ? `${d.order.index}/${d.order.total}` : String(d.order.index);
+                return d.order?.total
+                  ? `${d.order.index}/${d.order.total}`
+                  : String(d.order.index);
               }
               return "";
             };
@@ -72,7 +68,9 @@ export default function CheckinClient() {
                 "⚠️ Bạn đã điểm danh trước đó.",
                 `Sự kiện: ${data.event ?? eventId}`,
                 `Email: ${data.email ?? ""}`,
-                buildOrder(data) ? `Thứ tự (lần đầu): ${buildOrder(data)}` : "",
+                buildOrder(data)
+                  ? `Thứ tự (lần đầu): ${buildOrder(data)}`
+                  : "",
               ].filter(Boolean);
               setStatus(lines.join("\n"));
             } else {
