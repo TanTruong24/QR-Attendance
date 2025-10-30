@@ -45,6 +45,7 @@ export default function CheckinClient() {
 
             const data = await res.json();
 
+            // Helper: build "n/total"
             const buildOrder = (d: any) => {
               if (d?.orderLabel) return d.orderLabel;
               if (d?.order?.index) {
@@ -55,22 +56,23 @@ export default function CheckinClient() {
               return "";
             };
 
-            if (data.ok) {
+            // ❗Ưu tiên duplicate trước (vì GAS trả ok:true + duplicate:true)
+            if (data.duplicate) {
               const lines = [
-                "✅ Điểm danh thành công!",
-                `Sự kiện: ${data.event ?? eventId}`,
-                `Email: ${data.email ?? ""}`,
-                buildOrder(data) ? `Thứ tự: ${buildOrder(data)}` : "",
-              ].filter(Boolean);
-              setStatus(lines.join("\n"));
-            } else if (data.duplicate) {
-              const lines = [
-                "⚠️ Bạn đã điểm danh trước đó.",
+                "⚠️ Email này đã điểm danh trước đó.",
                 `Sự kiện: ${data.event ?? eventId}`,
                 `Email: ${data.email ?? ""}`,
                 buildOrder(data)
                   ? `Thứ tự (lần đầu): ${buildOrder(data)}`
                   : "",
+              ].filter(Boolean);
+              setStatus(lines.join("\n"));
+            } else if (data.ok) {
+              const lines = [
+                "✅ Điểm danh thành công!",
+                `Sự kiện: ${data.event ?? eventId}`,
+                `Email: ${data.email ?? ""}`,
+                buildOrder(data) ? `Thứ tự: ${buildOrder(data)}` : "",
               ].filter(Boolean);
               setStatus(lines.join("\n"));
             } else {
