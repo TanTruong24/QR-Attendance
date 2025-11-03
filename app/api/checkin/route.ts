@@ -5,8 +5,9 @@ export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   try {
-    // giữ nguyên body dạng text để tránh preflight & sai encoding
+    const url = new URL(req.url);
     const bodyText = await req.text();
+    const hasBody = bodyText.trim().length > 0;
 
     const gasUrl =
       process.env.APPS_SCRIPT_URL ||
@@ -20,17 +21,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const res = await fetch(gasUrl, {
+    // Ghép query từ client vào đích GAS
+    const target = new URL(gasUrl);
+    url.searchParams.forEach((v, k) => target.searchParams.append(k, v));
+
+    const res = await fetch(target.toString(), {
       method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: bodyText,
+      headers: hasBody ? { "Content-Type": "text/plain;charset=utf-8" } : undefined,
+      body: hasBody ? bodyText : undefined, // OAuth: không body
     });
 
     const raw = await res.text();
-    // cố gắng parse JSON từ Apps Script
     try {
       const json = JSON.parse(raw);
-      // trả về same-origin -> không còn CORS
       return NextResponse.json(json, { status: 200 });
     } catch {
       return NextResponse.json(
